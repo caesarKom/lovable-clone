@@ -9,6 +9,7 @@ import { MessagesContainer } from "../components/messages-container";
 import { Suspense, useState } from "react";
 import { Fragment } from "@/generated/prisma";
 import { ProjectHeader } from "../components/project-header";
+import { FragmentWeb } from "../components/fragment-web";
 
 export const ProjectView = ({ projectId }: { projectId: string }) => {
   const [activeFragment, setActiveFragment] = useState<Fragment | null>(null);
@@ -34,7 +35,7 @@ export const ProjectView = ({ projectId }: { projectId: string }) => {
         </ResizablePanel>
         <ResizableHandle withHandle />
         <ResizablePanel defaultSize={65} minSize={50}>
-          YODO preview
+          {!!activeFragment && <FragmentWeb data={activeFragment} />}
         </ResizablePanel>
       </ResizablePanelGroup>
     </div>
