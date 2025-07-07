@@ -4,26 +4,35 @@ import { baseProcedure, createTRPCRouter } from "@/trpc/init";
 import z from "zod";
 
 export const messagesRouter = createTRPCRouter({
-  getMany: baseProcedure.query(async () => {
-    const messages = await db.message.findMany({
-      orderBy: {
-        updatedAt: "desc",
-      },
-      //   include: {
-      //     fragment: true,
-      //   },
-    });
+  getMany: baseProcedure
+    .input(
+      z.object({
+        projectId: z.string().min(1, { message: "Project Id is required" }),
+      })
+    )
+    .query(async ({ input }) => {
+      const messages = await db.message.findMany({
+        where: {
+          projectId: input.projectId,
+        },
+        orderBy: {
+          updatedAt: "asc",
+        },
+        include: {
+          fragment: true,
+        },
+      });
 
-    return messages;
-  }),
+      return messages;
+    }),
 
   create: baseProcedure
     .input(
       z.object({
         value: z
           .string()
-          .min(1, { message: "Message is required" })
-          .max(10000, { message: "Prompt is too long" }),
+          .min(1, { message: "Value is required" })
+          .max(10000, { message: "Value is too long" }),
         projectId: z.string().min(1, { message: "Project Id is required" }),
       })
     )
