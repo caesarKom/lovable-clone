@@ -20,20 +20,25 @@ export const MessagesContainer = ({
   setActiveFragment,
 }: Props) => {
   const bottomRef = useRef<HTMLDivElement>(null);
+  const lastAssistantMessageIdRef = useRef<string | null>(null);
+
   const trpc = useTRPC();
   const { data: messages } = useSuspenseQuery(
-    // Todo: live update
     trpc.messages.getMany.queryOptions({ projectId }, { refetchInterval: 5000 })
   );
 
-  //   useEffect(() => {
-  //     const lastAssistantMessageWithFragment = messages.findLast(
-  //       (message) => message.role === "ASSISTANT" && !!message.fragment
-  //     );
-  //     if (lastAssistantMessageWithFragment) {
-  //       setAciveFragment(lastAssistantMessageWithFragment.fragment);
-  //     }
-  //   }, [messages, setAciveFragment]);
+  useEffect(() => {
+    const lastAssistantMessage = messages.findLast(
+      (message) => message.role === "ASSISTANT"
+    );
+    if (
+      lastAssistantMessage?.fragment &&
+      lastAssistantMessage.id !== lastAssistantMessageIdRef.current
+    ) {
+      setActiveFragment(lastAssistantMessage.fragment);
+      lastAssistantMessageIdRef.current = lastAssistantMessage.id;
+    }
+  }, [messages, setActiveFragment]);
 
   useEffect(() => {
     bottomRef.current?.scrollIntoView();
