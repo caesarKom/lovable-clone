@@ -32,8 +32,8 @@ export const codeAgentFunction = inngest.createFunction(
       system: PROMPT,
       model: openai({
         model: "gpt-4.1",
-        defaultParameters: { temperature: 0.1 },
       }),
+
       tools: [
         createTool({
           name: "terminal",
@@ -41,28 +41,29 @@ export const codeAgentFunction = inngest.createFunction(
           parameters: z.object({
             command: z.string(),
           }),
+
           handler: async ({ command }, { step }) => {
             return await step?.run("terminal", async () => {
-              const buffer = { stdout: "", stderr: "" };
+              const buffers = { stdout: "", stderr: "" };
 
               try {
                 const sandbox = await getSandbox(sandboxId);
                 const result = await sandbox.commands.run(command, {
                   onStdout: (data: string) => {
-                    buffer.stdout += data;
+                    buffers.stdout += data;
                   },
                   onStderr: (data: string) => {
-                    buffer.stderr += data;
+                    buffers.stderr += data;
                   },
                 });
 
                 return result.stdout;
               } catch (error) {
                 console.error(
-                  `Command failed: ${error} \nstdout: ${buffer.stdout}\nstderr: ${buffer.stderr}`
+                  `Command failed: ${error} \nstdout: ${buffers.stdout}\nstderr: ${buffers.stderr}`
                 );
 
-                return `Command failed: ${error} \nstdout: ${buffer.stdout}\nstderr: ${buffer.stderr}`;
+                return `Command failed: ${error} \nstdout: ${buffers.stdout}\nstderr: ${buffers.stderr}`;
               }
             });
           },
@@ -79,6 +80,7 @@ export const codeAgentFunction = inngest.createFunction(
               })
             ),
           }),
+
           handler: async (
             { files },
             { step, network }: Tool.Options<AgentState>
@@ -87,14 +89,15 @@ export const codeAgentFunction = inngest.createFunction(
               "createOrUpdateFiles",
               async () => {
                 try {
-                  const updateFiles = network.state.data.files || {};
+                  const updatedFiles = network.state.data.files || {};
                   const sandbox = await getSandbox(sandboxId);
 
                   for (const file of files) {
                     await sandbox.files.write(file.path, file.content);
-                    updateFiles[file.path] = file.content;
+                    updatedFiles[file.path] = file.content;
                   }
-                  return updateFiles;
+
+                  return updatedFiles;
                 } catch (error) {
                   return "Error: " + error;
                 }
@@ -122,6 +125,7 @@ export const codeAgentFunction = inngest.createFunction(
                   const content = await sandbox.files.read(file);
                   contents.push({ path: file, content });
                 }
+
                 return JSON.stringify(contents);
               } catch (error) {
                 return "Error: " + error;
@@ -153,8 +157,9 @@ export const codeAgentFunction = inngest.createFunction(
       maxIter: 15,
       router: async ({ network }) => {
         const summary = network.state.data.summary;
-        if (summary) return;
-
+        if (summary) {
+          return;
+        }
         return codeAgent;
       },
     });
@@ -165,7 +170,7 @@ export const codeAgentFunction = inngest.createFunction(
       !result.state.data.summary ||
       Object.keys(result.state.data.files || {}).length === 0;
 
-    const sandboxUrl = await step.run("get-samdbox-url", async () => {
+    const sandboxUrl = await step.run("get-sandbox-url", async () => {
       const sandbox = await getSandbox(sandboxId);
       const host = sandbox.getHost(3000);
       return `https://${host}`;
